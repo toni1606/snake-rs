@@ -1,7 +1,12 @@
 use crate::data_structures::{point::Point, snake::Snake, direction::Direction};
 use rand::{Rng, thread_rng};
 use std::io::Stdout;
-use crossterm::{terminal::{size, enable_raw_mode, SetSize, Clear, ClearType}, ExecutableCommand, cursor::Hide};
+
+use crossterm::terminal::{Clear, ClearType, size, SetSize, enable_raw_mode, disable_raw_mode};
+use crossterm::ExecutableCommand;
+use crossterm::cursor::{Show, MoveTo, Hide};
+use crossterm::style::{SetForegroundColor, Print, ResetColor, Color};
+use crossterm::event::{poll, read, Event, KeyCode, KeyModifiers, KeyEvent};
 
 #[derive(Debug)]
 pub struct Game {
@@ -37,6 +42,14 @@ impl Game {
 		}
 	}
 
+	pub fn run(&mut self) {
+		self.place_food();
+		self.ui_setup();
+		self.render();
+
+
+	}
+	
 	fn place_food(&mut self) {
 		loop {
 			let point = Point::new(thread_rng().gen_range(0..self.grid_size.0) , thread_rng().gen_range(0..self.grid_size.1));
@@ -57,13 +70,143 @@ impl Game {
 			.execute(Hide).unwrap();
 	}
 	
-	fn render(&mut self) {}
-
-	pub fn run(&mut self) {
-		self.place_food();
-		self.ui_setup();
-		self.render();
-
-
+	fn render(&mut self) {
+		self.draw_walls();
+		self.draw_background();
+		self.draw_snake();
+		self.draw_food();
 	}
+
+	fn draw_walls(&mut self) {
+		self.stdout.execute(SetForegroundColor(Color::DarkGrey)).unwrap();
+
+		// draw lateral walls
+		for x in 0..self.grid_size.0 + 2 {
+			self.stdout
+				.execute(MoveTo(x, 0)).unwrap()
+				.execute(Print("#")).unwrap()
+				.execute(MoveTo(x, self.grid_size.1 + 1)).unwrap()
+				.execute(Print("#")).unwrap();
+		}
+
+		// draw vertical walls
+		for y in 0..self.grid_size.1 + 2 {
+			self.stdout
+				.execute(MoveTo(0, y)).unwrap()
+				.execute(Print("#")).unwrap()
+				.execute(MoveTo(self.grid_size.0 + 1, y)).unwrap()
+				.execute(Print("#")).unwrap();
+		}
+
+		// draw corners
+		self.stdout
+            .execute(MoveTo(0, 0)).unwrap()
+            .execute(Print("#")).unwrap()
+            .execute(MoveTo(self.grid_size.0 + 1, self.grid_size.1 + 1)).unwrap()
+            .execute(Print("#")).unwrap()
+            .execute(MoveTo(self.grid_size.0 + 1, 0)).unwrap()
+            .execute(Print("#")).unwrap()
+            .execute(MoveTo(0, self.grid_size.1 + 1)).unwrap()
+            .execute(Print("#")).unwrap();
+	}
+
+	fn draw_background(&mut self) {
+		self.stdout.execute(ResetColor).unwrap();
+
+		// loop through grid and print a space everywhere ecept borders
+		for y in 1..self.grid_size.1 + 1 {
+			for x in 1..self.grid_size.0 + 1 {
+				self.stdout
+					.execute(MoveTo(x, y)).unwrap()
+					.execute(Print(" ")).unwrap();
+			}
+		}
+	}
+
+	fn draw_snake(&mut self) {
+        self.stdout.execute(
+			SetForegroundColor(
+				match self.movement_speed % 3 {
+            		0 => Color::Green,
+            		1 => Color::Cyan,
+            		_ => Color::Yellow
+        		}
+			)
+		).unwrap();
+
+        let body_points = self.snake.get_body_points();
+        for (i, body) in body_points.iter().enumerate() {
+            let previous = if i == 0 { None } else { body_points.get(i - 1) };
+            let next = body_points.get(i + 1);
+            
+			let symbol = if let Some(&next) = next {
+                if let Some(&previous) = previous {
+                    if previous.x == next.x {
+                        '║'
+                    } else if previous.y == next.y {
+                        '═'
+                    } else {
+                        let mut d = body.clone();
+						d.move_point(Direction::Down, 1);
+
+                        let mut r = body.clone();
+						r.move_point(Direction::Right, 1);
+
+                        let u = {
+							if body.y == 0 { 
+								body.clone() 
+							} else { 
+								let mut temp = body.clone();
+								temp.move_point(Direction::Up, 1);
+								temp 
+							}
+						};
+                        let l = {
+							if body.x == 0 {
+								body.clone()
+							} else {
+								let mut temp = body.clone();
+								temp.move_point(Direction::Left, 1);
+								temp
+							}
+						};
+
+                        if (next == d && previous == r) || (previous == d && next == r) {
+                            '╔'
+                        } else if (next == d && previous == l) || (previous == d && next == l) {
+                            '╗'
+                        } else if (next == u && previous == r) || (previous == u && next == r) {
+                            '╚'
+                        } else {
+                            '╝'
+                        }
+                    }
+                } else {
+                    'O'
+                }
+            } else if let Some(&previous) = previous {
+                if body.y == previous.y {
+                    '═'
+                } else {
+                    '║'
+                }
+            } else {
+                panic!("Invalid snake body point.");
+            };
+
+            self.stdout
+                .execute(MoveTo(body.x + 1, body.y + 1)).unwrap()
+                .execute(Print(symbol)).unwrap();
+        }
+	}
+
+	fn draw_food(&mut self) {
+		self.stdout.execute(SetForegroundColor(Color::White)).unwrap();
+
+		for food in self.food.iter() {
+			self.stdout
+				.execute(MoveTo(food.x + 1, food.y + 1)).unwrap()
+				.execute(Print("•")).unwrap();
+		}
+	}	
 }
