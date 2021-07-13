@@ -8,7 +8,10 @@ pub struct Point {
 
 impl Point {
 	pub fn new(x: u16, y: u16) -> Self {
-		Self {x, y}
+		Self {
+			x, 
+			y
+		}
 	}
 
 	pub fn move_point(&mut self, direction: Direction, tiles: u16) {
