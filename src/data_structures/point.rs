@@ -11,7 +11,7 @@ impl Point {
 		Self {x, y}
 	}
 
-	pub fn move(&mut self, direction: Direction, tiles: u16) {
+	pub fn move_point(&mut self, direction: Direction, tiles: u16) {
 		let tiles = tiles as i16;
 
 		let move_coordinates = match direction {
@@ -19,13 +19,13 @@ impl Point {
 			Direction::Up		=> (0, -tiles),
 			Direction::Right	=> (0, tiles),
 			Direction::Down		=> (0, tiles)
-		}
+		};
 
-		self.x = move_coordinate(self.x, move_coordinates.0);
-		self.y = move_coordinate(self.y, move_coordinates.1);
+		self.x = Point::move_coordinate(self.x, move_coordinates.0);
+		self.y = Point::move_coordinate(self.y, move_coordinates.1);
 	}
 	
-	pub fn move_coordinate(value: u16, by: i16) -> u16 {
+	fn move_coordinate(value: u16, by: i16) -> u16 {
 		if by.is_negative() && by.abs() > value as i16 {
 			panic!("Transforming value {} by {} woud be negative", value, by);
 		}
