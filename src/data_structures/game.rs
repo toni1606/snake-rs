@@ -1,12 +1,7 @@
-use crate::data_structures::point::Point;
-use crate::data_structures::snake::Snake;
-use crate::data_structures::direction::Direction;
-
-use crossterm::terminal::size;
-
-use rand::Rng;
-
+use crate::data_structures::{point::Point, snake::Snake, direction::Direction};
+use rand::{Rng, thread_rng};
 use std::io::Stdout;
+use crossterm::{terminal::{size, enable_raw_mode, SetSize, Clear, ClearType}, ExecutableCommand, cursor::Hide};
 
 #[derive(Debug)]
 pub struct Game {
@@ -30,7 +25,7 @@ impl Game {
 				Point::new(
 					grid_size.0 / 2, grid_size.1 / 2),
 					3,
-					match rand::thread_rng().gen_range(0..4) {
+					match thread_rng().gen_range(0..4) {
 						0 => Direction::Up,
 						1 => Direction::Down,
 						2 => Direction::Left,
@@ -42,5 +37,33 @@ impl Game {
 		}
 	}
 
+	fn place_food(&mut self) {
+		loop {
+			let point = Point::new(thread_rng().gen_range(0..self.grid_size.0) , thread_rng().gen_range(0..self.grid_size.1));
+
+			if !self.snake.contains_point(&point) {
+				self.food = Some(point);
+				break;
+			}
+		}
+	}
+
+	fn ui_setup(&mut self) {
+		enable_raw_mode().unwrap();
+
+		self.stdout
+			.execute(SetSize(self.grid_size.0 + 3, self.grid_size.1 + 3)).unwrap()
+			.execute(Clear(ClearType::All)).unwrap()
+			.execute(Hide).unwrap();
+	}
 	
+	fn render(&mut self) {}
+
+	pub fn run(&mut self) {
+		self.place_food();
+		self.ui_setup();
+		self.render();
+
+
+	}
 }
