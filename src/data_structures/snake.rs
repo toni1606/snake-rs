@@ -24,4 +24,20 @@ impl Snake {
 			digesting: false
 		}
 	}
+
+	pub fn get_head_point(&self) -> Point {
+		self.body.first().unwrap().clone()
+	}
+
+	pub fn get_body_points(&self) -> Vec<Point> {
+		self.body.clone()
+	}
+
+	pub fn get_direction(&self) -> Direction {
+		self.direction
+	}
+
+	pub fn contains_point(&self, point: &Point) -> bool {
+		self.body.contains(point)
+	}
 }
