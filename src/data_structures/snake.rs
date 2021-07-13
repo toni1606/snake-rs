@@ -41,6 +41,14 @@ impl Snake {
 		self.body.contains(point)
 	}
 
+	pub fn set_direction(&mut self, new_direction: Direction) {
+		self.direction = new_direction;
+	}
+
+	pub fn grow(&mut self) {
+		self.digesting = true;
+	}
+
 	pub fn slither(&mut self) {
 		self.body.get_mut(0).unwrap().move_point(self.direction, 1);
 
@@ -50,4 +58,5 @@ impl Snake {
 			self.digesting = false
 		}
 	}
+
 }
