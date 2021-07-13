@@ -1,12 +1,21 @@
-use crate::data_structures::{point::Point, snake::Snake, direction::Direction};
+use crate::data_structures::{point::Point, snake::Snake, direction::Direction, command::Command};
+
 use rand::{Rng, thread_rng};
+
 use std::io::Stdout;
+use std::time::{Duration, Instant};
 
 use crossterm::terminal::{Clear, ClearType, size, SetSize, enable_raw_mode, disable_raw_mode};
 use crossterm::ExecutableCommand;
 use crossterm::cursor::{Show, MoveTo, Hide};
 use crossterm::style::{SetForegroundColor, Print, ResetColor, Color};
 use crossterm::event::{poll, read, Event, KeyCode, KeyModifiers, KeyEvent};
+
+// Time Constants
+const MAX_INTERVAL: u16 = 700;
+const MIN_INTERVAL: u16 = 200;
+const MAX_SPEED: u16 = 20;
+
 
 #[derive(Debug)]
 pub struct Game {
@@ -47,7 +56,40 @@ impl Game {
 		self.ui_setup();
 		self.render();
 
+		let mut done = false;
+		while !done {
+			let interval = self.calculate_interval();
+			let direction = self.snake.get_direction();
+			let now = Instant::now();
 
+			while now.elapsed() < interval {
+				if let Some(command) = self.get_command(interval - now.elapsed()) {
+
+				}
+			}
+		}
+	}
+
+	fn calculate_interval(&self) -> Duration {
+		let speed = MAX_SPEED - self.movement_speed;
+		Duration::from_millis(
+			(MIN_INTERVAL + (((MAX_INTERVAL - MIN_INTERVAL) / MAX_SPEED) * speed)) as u64
+		)
+	}
+
+	fn wait_for_key_event(&self, wait_for: Duration) -> Option<KeyEvent> {
+		if poll(wait_for).ok()? {
+            let event = read().ok()?;
+            if let Event::Key(key_event) = event {
+                return Some(key_event);
+            }
+        }
+
+        None
+	}
+
+	fn get_command(&self, wait_for: Duration) -> Option<Command> {
+		let key_event = self.wait_for_key_event(wait_for)?;
 	}
 	
 	fn place_food(&mut self) {
