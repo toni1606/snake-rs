@@ -68,6 +68,8 @@ impl Game {
 				}
 			}
 		}
+
+		self.ui_restore();
 	}
 
 	fn calculate_interval(&self) -> Duration {
@@ -106,6 +108,14 @@ impl Game {
 	fn ui_setup(&mut self) {
 		enable_raw_mode().unwrap();
 
+		self.stdout
+			.execute(SetSize(self.grid_size.0 + 3, self.grid_size.1 + 3)).unwrap()
+			.execute(Clear(ClearType::All)).unwrap()
+			.execute(Hide).unwrap();
+	}
+
+	fn ui_restore(&mut self) {
+		let (cols, rows) = self.original_terminal_size;
 		self.stdout
 			.execute(SetSize(self.grid_size.0 + 3, self.grid_size.1 + 3)).unwrap()
 			.execute(Clear(ClearType::All)).unwrap()
